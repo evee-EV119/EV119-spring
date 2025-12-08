@@ -26,10 +26,11 @@ public class MemberApi {
     }
 
     // 로그인
-    @GetMapping("/login")
+    @PostMapping("/login")
     public ResponseEntity<ApiResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
-        memberService.login(loginRequestDTO);
-        return ResponseEntity.ok(ApiResponseDTO.of("SUCCESS"));
+        var tokens = memberService.login(loginRequestDTO);
+
+        return ResponseEntity.ok(ApiResponseDTO.of("SUCCESS", tokens));
     }
 
     //로그아웃
