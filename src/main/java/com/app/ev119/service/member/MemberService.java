@@ -8,7 +8,6 @@ import com.app.ev119.jwt.JwtTokenProvider;
 import com.app.ev119.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,6 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate stringRedisTemplate; // 문자열용 템플릿만 사용
-    private final RedisTemplate<Object, Object> redisTemplate;
 
     @Transactional
     public void signUp(SignUpRequestDTO dto) {
