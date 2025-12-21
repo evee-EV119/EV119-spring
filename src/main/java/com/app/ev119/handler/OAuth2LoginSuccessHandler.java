@@ -61,14 +61,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Member member = memberRepository.findByMemberEmail(email).orElseThrow(() -> new IllegalArgumentException("소셜로그인이 회원 DB에 없습니다."));
 
         //JWT발급
-        String accessToken = jwtTokenProvider.createAccessToken(member.getId());
+        String role = "ROLE_" + member.getMemberType().name();
+        String accessToken = jwtTokenProvider.createAccessToken(member.getId(), role);
+
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
         Long refreshTokenExpireMiles = jwtTokenProvider.getRefreshTokenValidityInMs();
 
         //Refresh token -> redis에 저장
         stringRedisTemplate.opsForValue()
-                .set("RT:" + member.getMemberEmail(), refreshToken, refreshTokenExpireMiles, TimeUnit.MICROSECONDS);
+                .set("RT:" + member.getId(), refreshToken, refreshTokenExpireMiles, TimeUnit.MICROSECONDS);
 
         //Refresh token -> cookie에 저장
         ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)

@@ -1,5 +1,6 @@
 package com.app.ev119.domain.entity;
 
+import com.app.ev119.domain.type.StaffStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,7 +35,14 @@ public class MemberStaff {
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
 
-    @OneToMany(mappedBy = "memberStaff")
+    @Column(nullable = false, unique = true)
+    private String licenseNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StaffStatus staffStatus =  StaffStatus.PENDING;
+
+    @OneToMany(mappedBy = "memberStaff", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<StaffCert> staffCerts;
 
     {

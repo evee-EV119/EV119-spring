@@ -24,11 +24,15 @@ public class QMemberStaff extends EntityPathBase<MemberStaff> {
 
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
+    public final StringPath licenseNumber = createString("licenseNumber");
+
     public final QMember member;
 
     public final StringPath memberStaffIndustry = createString("memberStaffIndustry");
 
     public final ListPath<StaffCert, QStaffCert> staffCerts = this.<StaffCert, QStaffCert>createList("staffCerts", StaffCert.class, QStaffCert.class, PathInits.DIRECT2);
+
+    public final EnumPath<com.app.ev119.domain.type.StaffStatus> staffStatus = createEnum("staffStatus", com.app.ev119.domain.type.StaffStatus.class);
 
     public QMemberStaff(String variable) {
         this(MemberStaff.class, forVariable(variable), INITS);

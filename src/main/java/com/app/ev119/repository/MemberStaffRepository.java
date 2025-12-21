@@ -4,6 +4,7 @@ import com.app.ev119.domain.entity.MemberStaff;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MemberStaffRepository extends JpaRepository<MemberStaff, Long> {
     default void saveMemberStaff(MemberStaff memberStaff){
@@ -21,4 +22,9 @@ public interface MemberStaffRepository extends JpaRepository<MemberStaff, Long> 
     }
 
     public void deleteByMember_Id(Long memberId);
+
+    public Optional<MemberStaff> findFirstByMember_Id(Long memberId);
+
+    public boolean existsByLicenseNumber(String licenseNumber);
+
 }

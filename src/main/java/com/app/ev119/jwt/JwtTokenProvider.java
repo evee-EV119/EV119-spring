@@ -31,26 +31,37 @@ public class JwtTokenProvider {
     }
 
     // Access Token
-    public String createAccessToken(Long memberId) {
-        return createToken(memberId, accessTokenValidityInMs);
+    public String createAccessToken(Long memberId, String role) {
+        return createToken(memberId, accessTokenValidityInMs, role);
     }
 
-    // Refresh Token
+    // Refresh Token은 굳이 role 없어도 됨
     public String createRefreshToken(Long memberId) {
-        return createToken(memberId, refreshTokenValidityInMs);
+        return createToken(memberId, refreshTokenValidityInMs, null);
     }
 
-    private String createToken(Long memberId, long validityInMs) {
+    private String createToken(Long memberId, long validityInMs, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + validityInMs);
 
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(String.valueOf(memberId))
                 .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .expiration(expiryDate);
+
+        if (role != null && !role.isBlank()) {
+            builder.claim("role", role); // 예: ROLE_STAFF
+        }
+
+        return builder.signWith(key).compact();
     }
+
+    // role 꺼내기
+    public String getRole(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("role", String.class);
+    }
+
 
     /*
      * 토큰에서 memberId 꺼내기

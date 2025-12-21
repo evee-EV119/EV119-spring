@@ -7,13 +7,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -38,11 +39,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtTokenProvider.validateToken(token)) {
                     Long memberId = jwtTokenProvider.getMemberId(token);
 
+                    String role = jwtTokenProvider.getRole(token);
+
+                    List<SimpleGrantedAuthority> authorities =
+                            (role == null || role.isBlank())
+                                    ? List.of()
+                                    : List.of(new SimpleGrantedAuthority(role));
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     memberId,
                                     null,
-                                    Collections.emptyList()
+                                    authorities
                             );
 
                     authentication.setDetails(
@@ -64,13 +72,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        log.info("JwtFilter shouldNotFilter check path={}", path);
 
         return path.equals("/api/member/signup")
                 || path.equals("/api/member/login")
+                // || path.equals("/api/staff/signup")
+                // || path.equals("/api/staff/login")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs");
     }
-
-
 }

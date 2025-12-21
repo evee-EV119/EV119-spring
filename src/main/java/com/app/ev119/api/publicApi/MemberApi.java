@@ -2,6 +2,7 @@ package com.app.ev119.api.publicApi;
 
 import com.app.ev119.domain.dto.ApiResponseDTO;
 import com.app.ev119.domain.dto.request.member.LoginRequestDTO;
+import com.app.ev119.domain.dto.request.member.MemberStaffSignUpRequestDTO;
 import com.app.ev119.domain.dto.request.member.ResetPasswordRequestDTO;
 import com.app.ev119.domain.dto.request.member.SignUpRequestDTO;
 import com.app.ev119.domain.dto.response.member.LoginResponseDTO;
@@ -12,7 +13,6 @@ import com.app.ev119.service.sms.SmsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +27,7 @@ public class MemberApi {
     private final SmsService smsService;
     private final MemberRepository memberRepository;
 
-    // 회원가입
+
     @PostMapping("/signup")
     public ResponseEntity<ApiResponseDTO> signUp(@RequestBody SignUpRequestDTO signUpRequestDTO) {
         memberService.signUp(signUpRequestDTO);
@@ -36,12 +36,22 @@ public class MemberApi {
                 .body(ApiResponseDTO.of("회원가입이 완료되었습니다"));
     }
 
-    // 로그인
+
+    @PostMapping("/staff/signup")
+    public ResponseEntity<ApiResponseDTO> signUpStaff(@RequestBody MemberStaffSignUpRequestDTO dto) {
+        memberService.signUpStaff(dto);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponseDTO.of("의료진 회원가입 신청이 완료되었습니다. (승인 대기)"));
+    }
+
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO) {
 
         LoginResponseDTO loginResponse = memberService.login(loginRequestDTO);
 
+        // refresh token 쿠키로 저장
         String refreshToken = loginResponse.getRefreshToken();
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
@@ -51,10 +61,16 @@ public class MemberApi {
                 .sameSite("Lax")
                 .build();
 
+        // memberType 내려주고 싶으면 DB 조회해서 포함 (프론트 분기용)
+        // (LoginResponseDTO에 memberType 필드 추가해도 되지만, 최소 수정으로 여기서만 처리)
+        Member member = memberRepository.findById(loginResponse.getMemberId())
+                .orElse(null);
+
         Map<String, Object> data = Map.of(
                 "memberId", loginResponse.getMemberId(),
                 "memberName", loginResponse.getMemberName(),
                 "memberEmail", loginResponse.getMemberEmail(),
+                "memberType", member != null ? member.getMemberType().name() : null,
                 "accessToken", loginResponse.getAccessToken()
         );
 
@@ -65,17 +81,15 @@ public class MemberApi {
     }
 
 
-    // 로그아웃
     @DeleteMapping("/logout")
     public ResponseEntity<ApiResponseDTO> logout(
             @CookieValue(name = "refreshToken", required = false) String refreshToken
     ) {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null ||
                 !authentication.isAuthenticated() ||
-                authentication.getPrincipal().equals("anonymousUser")) {
+                "anonymousUser".equals(authentication.getPrincipal())) {
 
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
@@ -98,12 +112,16 @@ public class MemberApi {
                 .body(ApiResponseDTO.of("로그아웃 되었습니다."));
     }
 
-    // 토큰 재발급
-    @PostMapping("/refresh")
-    public ResponseEntity<ApiResponseDTO> refreshToken(@CookieValue(name = "refreshToken",  required = false) String refreshToken) {
 
-        if(refreshToken == null || refreshToken.isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponseDTO.of("refresh token이 존재하지 않습니다."));
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponseDTO> refreshToken(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken
+    ) {
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseDTO.of("refresh token이 존재하지 않습니다."));
         }
 
         LoginResponseDTO tokenResponse = memberService.refreshToken(refreshToken);
@@ -115,15 +133,23 @@ public class MemberApi {
                 .sameSite("Lax")
                 .build();
 
+        Member member = memberRepository.findById(tokenResponse.getMemberId())
+                .orElse(null);
+
         Map<String, Object> data = Map.of(
                 "memberId", tokenResponse.getMemberId(),
                 "memberName", tokenResponse.getMemberName(),
                 "memberEmail", tokenResponse.getMemberEmail(),
+                "memberType", member != null ? member.getMemberType().name() : null,
                 "accessToken", tokenResponse.getAccessToken()
         );
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(ApiResponseDTO.of("토큰이 재발급 되었습니다", data));
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(ApiResponseDTO.of("토큰이 재발급 되었습니다", data));
     }
+
 
     @PostMapping("/password/reset")
     public ResponseEntity<ApiResponseDTO> resetPassword(@RequestBody ResetPasswordRequestDTO dto) {
@@ -149,13 +175,21 @@ public class MemberApi {
     }
 
     @DeleteMapping("/withdraw")
-    public ResponseEntity<ApiResponseDTO> memberWithdraw(@RequestParam Long memberId) {
+    public ResponseEntity<ApiResponseDTO> memberWithdraw() {
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal())) {
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponseDTO.of("로그인 상태가 아닙니다."));
+        }
+
+        Long memberId = (Long) authentication.getPrincipal();
         memberService.withdraw(memberId);
 
         return ResponseEntity.ok(ApiResponseDTO.of("탈퇴가 완료되었습니다."));
     }
-
-
-
 }

@@ -46,6 +46,8 @@ public class QMember extends EntityPathBase<Member> {
 
     public final ListPath<MemberStaff, QMemberStaff> memberStaffs = this.<MemberStaff, QMemberStaff>createList("memberStaffs", MemberStaff.class, QMemberStaff.class, PathInits.DIRECT2);
 
+    public final EnumPath<com.app.ev119.domain.type.MemberType> memberType = createEnum("memberType", com.app.ev119.domain.type.MemberType.class);
+
     public final ListPath<Visited, QVisited> visited = this.<Visited, QVisited>createList("visited", Visited.class, QVisited.class, PathInits.DIRECT2);
 
     public QMember(String variable) {

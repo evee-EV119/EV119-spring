@@ -1,5 +1,6 @@
 package com.app.ev119.domain.entity;
 
+import com.app.ev119.domain.type.MemberType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,6 +34,10 @@ public class Member {
     private String memberEmail;
     private String memberPassword;
     private String memberName;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MemberType memberType = MemberType.MEMBER;
 
     @Column(unique = true, nullable = false)
     private String memberPhone;
