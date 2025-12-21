@@ -2,7 +2,9 @@ package com.app.ev119.service;
 
 import com.app.ev119.domain.dto.*;
 import com.app.ev119.domain.dto.request.MemberDTO;
+import com.app.ev119.domain.dto.response.ChangePasswordDTO;
 import com.app.ev119.domain.entity.*;
+import com.app.ev119.exception.MyPageException;
 import com.app.ev119.repository.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -34,25 +36,26 @@ public class MyPageServiceImpl implements MyPageService {
     @Override
     public MemberDTO getMember(Long memberId) {
         Member foundMember = entityManager.find(Member.class, memberId);
+        if (foundMember == null) {
+            throw new MyPageException("존재하지 않는 회원입니다. memberId: " + memberId);
+        }
         MemberDTO memberDTO = new MemberDTO();
         memberDTO.setId(foundMember.getId());
         memberDTO.setMemberName(foundMember.getMemberName());
         memberDTO.setMemberPhone(foundMember.getMemberPhone());
         memberDTO.setMemberEmail(foundMember.getMemberEmail());
-//        memberDTO.setAllergies(foundMember.getAllergies());
-//        memberDTO.setHealth(foundMember.getHealth());
-//        memberDTO.setMedications(foundMember.getMedications());
-//        memberDTO.setVisited(foundMember.getVisited());
-//        memberDTO.setEmergencyPhones(foundMember.getEmergencyPhones());
-//        memberDTO.setAddresses(foundMember.getAddresses());
-//        memberDTO.setMemberSocials(foundMember.getMemberSocials());
-//        memberDTO.setMemberStaffs(foundMember.getMemberStaffs());
         return memberDTO;
     }
 
     @Override
     public void modifyMember(Long memberId, MemberDTO member) {
+        if (member == null) {
+            throw new MyPageException("수정할 회원 정보가 없습니다.");
+        }
         Member foundMember = entityManager.find(Member.class, memberId);
+        if (foundMember == null) {
+            throw new MyPageException("존재하지 않는 회원입니다. memberId: " + memberId);
+        }
         foundMember.setMemberName(member.getMemberName());
         foundMember.setMemberPhone(member.getMemberPhone());
     }
@@ -60,34 +63,47 @@ public class MyPageServiceImpl implements MyPageService {
     @Override
     public void removeMember(Long memberId) {
         Member foundMember = entityManager.find(Member.class, memberId);
-        addressRepository.deleteByMember_Id(memberId);
-        foundMember.setAddresses(null);
-        allergyRepository.deleteByMember_Id(memberId);
-        foundMember.setAllergies(null);
-        diseaseRepository.deleteByHealth_Id(healthRepository.findByMember_Id(memberId).getId());
-
-        emergencyPhoneRepository.deleteByMember_Id(memberId);
-        healthRepository.deleteByMember_Id(memberId);
-        medicationRepository.deleteByMember_Id(memberId);
+        if (foundMember == null) {
+            throw new MyPageException("존재하지 않는 회원입니다. memberId: " + memberId);
+        }
         memberStaffRepository.findByMember_Id(memberId).forEach(memberStaff -> {
             staffCertRepository.deleteByMemberStaff_Id(memberStaff.getId());
         });
         memberStaffRepository.deleteByMember_Id(memberId);
+        Health health = healthRepository.findByMember_Id(memberId);
+        if (health != null) {
+            diseaseRepository.deleteByHealth_Id(health.getId());
+        }
+        healthRepository.deleteByMember_Id(memberId);
+        addressRepository.deleteByMember_Id(memberId);
+        allergyRepository.deleteByMember_Id(memberId);
+        emergencyPhoneRepository.deleteByMember_Id(memberId);
+        medicationRepository.deleteByMember_Id(memberId);
         visitedRepository.deleteByMember_Id(memberId);
         memberSocialRepository.deleteByMemberId(memberId);
+        
         entityManager.flush();
         entityManager.remove(foundMember);
     }
 
     @Override
-    public void modifyPassword(Long memberId, String password) {
+    public void modifyPassword(Long memberId, ChangePasswordDTO password) {
+        if (password == null || password.getNewPassword() == null || password.getNewPassword().isEmpty()) {
+            throw new MyPageException("비밀번호가 비어있습니다.");
+        }
         Member foundMember = entityManager.find(Member.class, memberId);
-        password = passwordEncoder.encode(password);
-        foundMember.setMemberPassword(password);
+        if (foundMember == null) {
+            throw new MyPageException("존재하지 않는 회원입니다. memberId: " + memberId);
+        }
+        String encodedPassword = passwordEncoder.encode(password.getNewPassword());
+        foundMember.setMemberPassword(encodedPassword);
     }
 
     @Override
     public Long findIdByToken(Authentication tokenDTO) {
+        if (tokenDTO == null || tokenDTO.getPrincipal() == null) {
+            throw new MyPageException("인증 정보가 없습니다.");
+        }
         Object principal = tokenDTO.getPrincipal();
         return (Long) principal;
     }
