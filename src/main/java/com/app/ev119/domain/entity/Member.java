@@ -39,7 +39,7 @@ public class Member {
     @Column(nullable = false)
     private MemberType memberType = MemberType.MEMBER;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = true)
     private String memberPhone;
 
     @OneToOne(cascade = CascadeType.ALL)
