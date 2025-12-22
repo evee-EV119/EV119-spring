@@ -46,4 +46,10 @@ public class SearchEmergencyLocationInfoItem {
 
     @JsonProperty("startTime")
     private String startTime;
+
+    @JsonProperty("hvec")
+    private String hvec;
+
+    @JsonProperty("hvgc")
+    private String hvgc;
 }

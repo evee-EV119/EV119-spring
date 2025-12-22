@@ -39,6 +39,25 @@ public class SearchEmergencyLocationInfoApi {
         return ResponseEntity.ok(ApiResponseDTO.of("success", response));
     }
 
+    @GetMapping("/search-emergency-with-status")
+    public ResponseEntity<ApiResponseDTO<SearchEmergencyLocationInfoResponse>> getSearchEmergencyWithStatus(
+            @RequestParam("lon") double lon,
+            @RequestParam("lat") double lat,
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "numOfRows", defaultValue = "10") Integer numOfRows
+    ) {
+        SearchEmergencyLocationInfoRequestDTO req = new SearchEmergencyLocationInfoRequestDTO();
+        req.setWgs84Lon(lon);
+        req.setWgs84Lat(lat);
+        req.setPageNo(pageNo);
+        req.setNumOfRows(numOfRows);
+
+        SearchEmergencyLocationInfoResponse response =
+                searchEmergencyLocationInfoService.getSearchEmergencyLocationInfoWithStatus(req);
+
+        return ResponseEntity.ok(ApiResponseDTO.of("success", response));
+    }
+
 
 
 }

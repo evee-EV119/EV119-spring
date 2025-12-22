@@ -2,6 +2,7 @@ package com.app.ev119.service.member;
 
 import com.app.ev119.domain.entity.Member;
 import com.app.ev119.domain.entity.MemberSocial;
+import com.app.ev119.domain.type.MemberType;
 import com.app.ev119.domain.type.SocialType;
 import com.app.ev119.oauth2.OAuth2MemberInfo;
 import com.app.ev119.oauth2.OAuth2MemberInfoFactory;
@@ -117,6 +118,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .memberEmail(memberInfo.getEmail())
                 .memberPassword(null)
                 .memberName(memberInfo.getName())
+                .memberType(MemberType.MEMBER)
+                .memberPhone(null)
                 .build();
 
         return memberRepository.save(member);
