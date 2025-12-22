@@ -14,7 +14,7 @@ public interface DiseaseRepository extends JpaRepository<Disease, Long> {
         saveAll(allergies);
     }
 
-    public List<Disease> findByHealth_Id(Long memberId);
+    public List<Disease> findByHealth_Id(Long healthId);
 
     default List<Disease> findAllHealth(){
         return findAll();
