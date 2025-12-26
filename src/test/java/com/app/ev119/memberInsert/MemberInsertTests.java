@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.Commit;
 
 import java.text.ParseException;
@@ -41,6 +42,8 @@ public class MemberInsertTests {
     private EmergencyPhoneService emergencyPhoneService;
     @Autowired
     private VisitedService visitedService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Test
     public void seedMembersWithAllData() throws RuntimeException {
@@ -54,12 +57,63 @@ public class MemberInsertTests {
             memberId = createMember(i);
             fillAllData(memberId, i);
         }
+        insertStaff(); // staff@env119.com / staff1234!
+        insertAdminAccount(); // admin1@ev119.com / admin1234
     }
 
 //    @Test
 //    public void changeFirstDataTest() throws RuntimeException {
 //        changeFirstData(memberRepository.findByMemberEmail("test123@gmail.com").orElseThrow().getId());
 //    }
+
+//    @Test
+    public void insertStaff() {
+        Member memberStaff = new Member();
+        memberStaff.setMemberEmail("staff@env119.com");
+        memberStaff.setMemberPassword(passwordEncoder.encode("staff1234!"));
+        memberStaff.setMemberPhone("010" + "1313" + "1313");
+        memberStaff.setMemberType(MemberType.STAFF);
+        memberStaff.setMemberName("테스트 의료진");
+
+        entityManager.persist(memberStaff);
+
+        MemberStaff memberStaff1 = new MemberStaff();
+        memberStaff1.setStaffStatus(StaffStatus.PENDING);
+        memberStaff1.setMember(memberStaff);
+        memberStaff1.setMemberStaffIndustry("의사");
+        memberStaff1.setLicenseNumber("12324794834862394");
+        entityManager.persist(memberStaff1);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        MemberStaff found = entityManager.find(MemberStaff.class, memberStaff1.getId());
+        log.info("의료진 저장: id={}, memberId={}", found.getId(), found.getMember().getId());
+
+    }
+
+//    @Test
+    public void insertAdminAccount() {
+        log.info("🔥 insertAdminAccount START");
+
+        try {
+            Member admin = new Member();
+            admin.setMemberName("EV119 관리자");
+            admin.setMemberEmail("admin1" + "@ev119.com");
+            admin.setMemberPassword(passwordEncoder.encode("admin1234"));
+            admin.setMemberPhone("010" + "1234" + "8888"); // 중복 회피
+
+            admin.setMemberType(MemberType.ADMIN);
+
+            entityManager.persist(admin);
+            entityManager.flush();
+
+            log.info("🔥 AFTER FLUSH, id={}", admin.getId());
+        } catch (Exception e) {
+            log.error("❌ flush 실패", e);
+            throw e;
+        }
+    }
 
     private Long createMember(int i) {
         String email = "test" + i + "@gmail.com";
