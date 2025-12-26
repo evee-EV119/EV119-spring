@@ -218,6 +218,49 @@ class MemberTest {
         }
     }
 
+    @Test
+    public void insertStaff() {
+        Member memberStaff = new Member();
+        memberStaff.setMemberEmail("staff@env119.com");
+        memberStaff.setMemberPassword(passwordEncoder.encode("staff1234!"));
+        memberStaff.setMemberPhone("010" + "1313" + "1313");
+        memberStaff.setMemberType(MemberType.STAFF);
+        memberStaff.setMemberName("테스트 의료진");
+
+        entityManager.persist(memberStaff);
+
+        MemberStaff memberStaff1 = new MemberStaff();
+        memberStaff1.setStaffStatus(StaffStatus.PENDING);
+        memberStaff1.setMember(memberStaff);
+        memberStaff1.setMemberStaffIndustry("의사");
+        memberStaff1.setLicenseNumber("12324794834862394");
+        entityManager.persist(memberStaff1);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        MemberStaff found = entityManager.find(MemberStaff.class, memberStaff1.getId());
+        log.info("의료진 저장: id={}, memberId={}", found.getId(), found.getMember().getId());
+
+    }
+
+    @Test
+    public void insertMember() {
+        Member member = new Member();
+        member.setMemberEmail("member@ev119.com");
+        member.setMemberPassword(passwordEncoder.encode("member1234!"));
+        member.setMemberName("테스트 멤버");
+        member.setMemberPhone("010" + "1515" + "1515");
+        member.setMemberType(MemberType.MEMBER);
+
+        entityManager.persist(member);
+        entityManager.flush();
+        entityManager.clear();
+
+        Member found =  entityManager.find(Member.class, member.getId());
+        log.info("사용자 저장: id={}" , found.getId());
+    }
+
 
 
 
